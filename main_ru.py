@@ -119,6 +119,7 @@ def delete_book():
             if r_u_s == "y":
                 cursor.execute("DELETE FROM books WHERE title = ? AND author_id = (SELECT id FROM authors WHERE name = ?)", (title, author_name))
                 database.commit()
+                print("Книга удалена.")
             else:
                 print("Удаление отменено.")
                 return
