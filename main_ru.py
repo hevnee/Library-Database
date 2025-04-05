@@ -8,7 +8,7 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS authors(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
-            country TEXT NULL,
+            country TEXT,
             UNIQUE (name)
         )""")
     cursor.execute("""
@@ -21,12 +21,12 @@ def create_tables():
             UNIQUE (title, author_id)
         )""")
     cursor.executemany("INSERT OR IGNORE INTO authors (name, country) VALUES (?, ?)", 
-        [("петр алешковский", "Москва, РСФСР, СССР"),
-        ("виктор астафьев", "Овсянка, Енисейская губерния, РСФСР"),
-        ("михаил бутов", "Москва, Россия"),
-        ("георгий владимов", "Харьков, СССР"),
-        ("владимир маканин", "Орск, Оренбургская область, РСФСР, СССР"),
-        ("ирина полянская", "Касли Челябинской области")])
+        [("Петр Алешковский", "Москва, РСФСР, СССР"),
+        ("Виктор Астафьев", "Овсянка, Енисейская губерния, РСФСР"),
+        ("Михаил Бутов", "Москва, Россия"),
+        ("Георгий Владимов", "Харьков, СССР"),
+        ("Владимир Маканин", "Орск, Оренбургская область, РСФСР, СССР"),
+        ("Ирина Полянская", "Касли Челябинской области")])
     cursor.executemany("INSERT OR IGNORE INTO books (title, author_id, year, pages) VALUES (?, ?, ?, ?)", 
         [("жизнеописание хорька", 1, 2011, 288),
         ("так хочется жить", 2, 1996, 448),
@@ -38,7 +38,7 @@ def create_tables():
 
 def new_author():
     print("\n[ Добавление автора ]")
-    author_name = str(input("Имя автора: ")).lower()
+    author_name = str(input("Имя автора: ")).title()
     if cursor.execute("SELECT name FROM authors WHERE name = ?", (author_name,)).fetchone() is None:
         author_country = str(input("Место рождения автора: ")).lower()
         cursor.execute("INSERT OR IGNORE INTO authors (name, country) VALUES (?, ?)", 
@@ -51,15 +51,15 @@ def new_author():
 
 def new_book():
     print("\n[ Добавление книги ]")
-    author_id = str(input("Имя автора: ")).lower()
-    fetchone_id = cursor.execute("SELECT id FROM authors WHERE name = ?", (author_id,)).fetchone()
+    author_name = str(input("Имя автора: ")).title()
+    fetchone_id = cursor.execute("SELECT id FROM authors WHERE name = ?", (author_name,)).fetchone()
     if fetchone_id is None:
         print("Автор не найден.")
     else:
         title = str(input("Название книги: ")).lower()
         cursor.execute("SELECT title FROM books WHERE title = ? AND author_id = ?", (title, int(fetchone_id[0])))
         if cursor.fetchone() is None:
-            year = int(input("Год издания: "))
+            year = int(input("Год выпуска: "))
             pages = int(input("Количество страниц: "))
             cursor.execute("INSERT OR IGNORE INTO books (title, author_id, year, pages) VALUES (?, ?, ?, ?)", 
                 (title, int(fetchone_id[0]), year, pages))
@@ -72,7 +72,7 @@ def new_book():
 def search():
     print("\n[ Поиск книг автора ]")
     result = []
-    author_name = str(input("Имя автора: ")).lower()
+    author_name = str(input("Имя автора: ")).title()
     cursor.execute("SELECT id FROM authors WHERE name = ?", (author_name,))
     check_author_name = cursor.fetchone()
     if check_author_name is None:
@@ -83,18 +83,18 @@ def search():
         titles = cursor.fetchall()
         for i in titles:
             result.append(f'"{i[0]}"')
-        print(f"Книги автора {author_name.title()}: {', '.join(result)}.")
+        print(f"Книги автора {author_name()}: {', '.join(result)}.")
 
 def array_count():
     print("\n[ Список авторов и их книг ]")
     cursor.execute("SELECT id, name FROM authors")
-    authors = cursor.fetchall()    
+    authors = cursor.fetchall()
     for i in range(len(authors)):
         aiO = authors[i][1]
         cursor.execute("SELECT COUNT(title) FROM books WHERE author_id = ?", (authors[i][0],))
         count_books = cursor.fetchall()
         print(f"Автор: {aiO.title()} | Книг: {count_books[0][0]}")
-
+ 
 def delete_book():
     print("\n[ Удаление книги ]")
     title = str(input("Название книги: ")).lower()
@@ -107,8 +107,8 @@ def delete_book():
         names = []
         for i in range(len(authors_id)):
             cursor.execute("SELECT name FROM authors WHERE id = ?", (authors_id[i][0],))
-            names.append(cursor.fetchone()[0].title())
-        author_name = str(input(f"Выберите автора: {', '.join(names)}\nАвтор: ")).lower()
+            names.append(cursor.fetchone()[0])
+        author_name = str(input(f"Выберите автора: {', '.join(names)}\nАвтор: ")).title()
         cursor.execute("SELECT name, id FROM authors WHERE name = ?", (author_name,))
         check_author_name = cursor.fetchone()
         if check_author_name is None:
@@ -119,7 +119,6 @@ def delete_book():
             if r_u_s == "y":
                 cursor.execute("DELETE FROM books WHERE title = ? AND author_id = (SELECT id FROM authors WHERE name = ?)", (title, author_name))
                 database.commit()
-                print("Книга удалена.")
             else:
                 print("Удаление отменено.")
                 return
@@ -136,8 +135,8 @@ def update_year():
         names = []
         for i in range(len(authors_id)):
             cursor.execute("SELECT name FROM authors WHERE id = ?", (authors_id[i][0],))
-            names.append(cursor.fetchone()[0].title())
-        author_name = str(input(f"Выберите автора: {', '.join(names)}\nАвтор: ")).lower()
+            names.append(cursor.fetchone()[0])
+        author_name = str(input(f"Выберите автора: {', '.join(names)}\nАвтор: ")).title()
         cursor.execute("SELECT name, id FROM authors WHERE name = ?", (author_name,))
         check_author_name = cursor.fetchone()
         if check_author_name is None:
